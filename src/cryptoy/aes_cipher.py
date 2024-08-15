@@ -4,10 +4,11 @@ from cryptography.hazmat.primitives.ciphers.aead import (
 
 
 def encrypt(msg: bytes, key: bytes, nonce: bytes) -> bytes:
-    # A implémenter en utilisant la class AESGCM
-    pass
+    c = AESGCM(key)
+    return c.encrypt(nonce, msg, None)
 
 
 def decrypt(msg: bytes, key: bytes, nonce: bytes) -> bytes:
-    # A implémenter en utilisant la class AESGCM
-    pass
+    c = AESGCM(key)
+    return c.decrypt(nonce, msg, None)
+

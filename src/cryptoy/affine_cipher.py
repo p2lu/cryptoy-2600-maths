@@ -11,47 +11,56 @@ from cryptoy.utils import (
 
 
 def compute_permutation(a: int, b: int, n: int) -> list[int]:
-    # A implémenter, en sortie on doit avoir une liste result tel que result[i] == (a * i + b) % n
-    pass
+    return [((a * i + b) % n) for i in range(n)]
 
 
 def compute_inverse_permutation(a: int, b: int, n: int) -> list[int]:
-    # A implémenter, pour cela on appelle perm = compute_permutation(a, b, n) et on calcule la permutation inverse
-    # result qui est telle que: perm[i] == j implique result[j] == i
-    pass
+    perm = compute_permutation(a, b, n)
+    results = [i for val, i in sorted(enumerate(perm), key=lambda x: x[1])]
+    return results
+
+
 
 
 def encrypt(msg: str, a: int, b: int) -> str:
-    # A implémenter, en utilisant compute_permutation, str_to_unicodes et unicodes_to_str
-    pass
+    perm = compute_permutation(a, b, 0x110000)
+    uni = str_to_unicodes(msg)
+    uni = [perm[uni[i]] for i in range(len(uni))]
+    return unicodes_to_str(uni)
+
 
 
 def encrypt_optimized(msg: str, a: int, b: int) -> str:
-    # A implémenter, sans utiliser compute_permutation
-    pass
+    uni_msg = str_to_unicodes(msg)
+    cipher = [(a * unicode + b) % 0x110000 for unicode in uni_msg]
+    return unicodes_to_str(cipher)
+
 
 
 def decrypt(msg: str, a: int, b: int) -> str:
-    # A implémenter, en utilisant compute_inverse_permutation, str_to_unicodes et unicodes_to_str
-    pass
+    uni = str_to_unicodes(msg)
+    perm = compute_inverse_permutation(a, b, 0x110000)
+    uni = [perm[uni[i]] for i in range(len(uni))]
+    return unicodes_to_str(uni)
+
+
 
 
 def decrypt_optimized(msg: str, a_inverse: int, b: int) -> str:
-    # A implémenter, sans utiliser compute_inverse_permutation
-    # On suppose que a_inverse a été précalculé en utilisant compute_affine_key_inverse, et passé
-    # a la fonction
-    pass
+    uni = str_to_unicodes(msg)
+    plain = [a_inverse * (unicode - b) % 0x110000 for unicode in uni]
+    return unicodes_to_str(plain)
+
 
 
 def compute_affine_keys(n: int) -> list[int]:
-    # A implémenter, doit calculer l'ensemble des nombre a entre 1 et n tel que gcd(a, n) == 1
-    # c'est à dire les nombres premiers avec n
-    pass
+    return [i for i in range(n) if gcd(i, n) == 1]
 
 
 def compute_affine_key_inverse(a: int, affine_keys: list, n: int) -> int:
-    # Trouver a_1 dans affine_keys tel que a * a_1 % N == 1 et le renvoyer
-    # Placer le code ici (une boucle)
+    for key in affine_keys:
+        if (a * key % n) == 1:
+            return key
 
     # Si a_1 n'existe pas, alors a n'a pas d'inverse, on lance une erreur:
     raise RuntimeError(f"{a} has no inverse")
@@ -62,9 +71,14 @@ def attack() -> tuple[str, tuple[int, int]]:
     # trouver msg, a et b tel que affine_cipher_encrypt(msg, a, b) == s
     # avec comme info: "bombe" in msg et b == 58
 
-    # Placer le code ici
-
-    raise RuntimeError("Failed to attack")
+    b = 58
+    a_val = compute_affine_keys(0x110000)
+    for a in a_val:
+        plaintext = decrypt(s, a, b)
+        if "bombe" in plaintext:
+            return (plaintext, (a, b))
+    
+    # raise RuntimeError("Failed to attack")
 
 
 def attack_optimized() -> tuple[str, tuple[int, int]]:
@@ -75,6 +89,15 @@ def attack_optimized() -> tuple[str, tuple[int, int]]:
     # trouver msg, a et b tel que affine_cipher_encrypt(msg, a, b) == s
     # avec comme info: "bombe" in msg
 
-    # Placer le code ici
-
-    raise RuntimeError("Failed to attack")
+    possibles = compute_affine_keys(0x110000)
+    for a in range(1, len(possibles)):
+        try:
+            a_inverse = compute_affine_key_inverse(a, possibles, 0x110000)
+        except:
+            continue
+        for b in range(1, 15000):
+            message = decrypt_optimized(s, a_inverse, b)
+            if "bombe" in message:
+                return (message, (a, b))
+    
+    # raise RuntimeError("Failed to attack")

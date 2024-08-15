@@ -30,33 +30,39 @@ def generate_users_and_password_hashes(
 def attack(passwords: list[str], passwords_database: dict[str, str]) -> dict[str, str]:
     users_and_passwords = {}
 
-    # A implémenter
-    # Doit calculer le mots de passe de chaque utilisateur grace à une attaque par dictionnaire
-
+    hash = {}
+    for password in passwords:
+        hash = hash_password(password)
+        hash[password] = hash
+    for _, (user, hash1) in enumerate(passwords_database.items()):
+        for __, (password, hash2) in enumerate(hash.items()):
+            if hash1 == hash2:
+                users_and_passwords[user] = password
     return users_and_passwords
 
 
 def fix(
     passwords: list[str], passwords_database: dict[str, str]
 ) -> dict[str, dict[str, str]]:
-    users_and_passwords = attack(passwords, passwords_database)
-
+    hashlist_passwd = attack(passwords, passwords_database)
     users_and_salt = {}
     new_database = {}
-
-    # A implémenter
-    # Doit calculer une nouvelle base de donnée ou chaque élement est un dictionnaire de la forme:
-    # {
-    #     "password_hash": H,
-    #     "password_salt": S,
-    # }
-    # tel que H = hash_password(S + password)
+    
+    for (user, passwd) in hashlist_passwd.items():
+        salt = random_salt()
+        users_and_salt = {
+            "password_hash": hash_password(passwd + salt),
+            "password_salt": salt,
+        }
+        new_database[user] = users_and_salt
 
     return new_database
+
 
 
 def authenticate(
     user: str, password: str, new_database: dict[str, dict[str, str]]
 ) -> bool:
-    # Doit renvoyer True si l'utilisateur a envoyé le bon password, False sinon
-    pass
+    arr = new_database[user]
+    hash = hash_password(password + arr["password_salt"])
+    return arr["password_hash"] == hash
